@@ -1,5 +1,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
+MBOX_FILE = File.join( RAILS_ROOT, 'public', 'download', 'bd4937b271d8f20c3003489a231b3824943a163f.mbox' )
+
 module Pop3SpecHelper
   def setup_pop3( opts = {}, setup_mailer = true )
     @valid_attributes = {
@@ -16,10 +18,27 @@ module Pop3SpecHelper
     @pop3.setup_mailer if setup_mailer
   end
 
-  def setup_mock_pop3( opts = {}, setup_mailer = true )
+  def setup_mock_mailer_and_time_pop3( opts = {}, setup_mailer = true )
+    @mailer = mock( "Net::POP3" )
     Net::POP3.should_receive(:new).once.and_return(@mailer)
     @mailer.should_receive(:enable_ssl).once
+    @time = mock("Time")
+    Time.stub!(:now).and_return(@time)
+    @time.stub!(:to_s).and_return( 'Thu Jan 08 01:22:01 -0500 2009' )
     setup_pop3( opts, setup_mailer )
+  end
+
+  def setup_mock_time_pop3( opts = {}, setup_mailer = true )
+    @time = mock("Time")
+    Time.should_receive(:now).once.and_return(@time)
+    @time.should_receive(:to_s).once.and_return( 'Thu Jan 08 01:22:01 -0500 2009' )
+    setup_pop3( opts, setup_mailer )
+  end
+
+  def remove_file( file )
+    if File.exist?( file )
+      FileUtils.rm( file )
+    end
   end
 end
 
@@ -72,7 +91,7 @@ describe Pop3, "setup mailer" do
     @pop3.old_server.should == new_server
   end
 
-  it "should kepe track of old port" do
+  it "should keep track of old port" do
     setup_pop3( @valid_attributes, false )
     @pop3.port.should == @valid_attributes[:port]
     @pop3.old_port.should be_nil
@@ -116,51 +135,65 @@ describe Pop3, "download mail" do
   include Pop3SpecHelper
 
   before(:each) do
-    @mailer = mock( "Net::POP3" )
+    remove_file( MBOX_FILE )
   end
 
-  it "should not connect due to authentication problem after downloading mail" do
-    setup_pop3
-
-    result = @pop3.download
-    result[:mails].should_not be_nil
-    result[:status].should == Pop3::OK_FLAG
-
-    @pop3.mailer.should_receive(:start).once.and_raise(Net::POPAuthenticationError)
-    result = @pop3.download
-
-    result[:mails].should be_nil
-    result[:status].should == Pop3::AUTHENTICATION_ERROR_FLAG
+  after(:all) do
+    remove_file( MBOX_FILE )
   end
 
   it "should not connect due to authentication problem" do
-    setup_mock_pop3( :username => 'boo' )
+    setup_mock_mailer_and_time_pop3( :username => 'boo' )
 
     @mailer.should_receive(:start).once.and_raise(Net::POPAuthenticationError)
     result = @pop3.download
 
-    result[:mails].should be_nil
+    result[:mail_count].should be_nil
     result[:status].should == Pop3::AUTHENTICATION_ERROR_FLAG
   end
 
   it "should not connect due to invalid server" do
-    setup_mock_pop3( :server => 'pop.wornpath.net' )
+    setup_mock_mailer_and_time_pop3( :server => 'pop.wornpath.net' )
 
     @mailer.should_receive(:start).once.and_raise(Timeout::Error)
     result = @pop3.download
 
-    result[:mails].should be_nil
+    result[:mail_count].should be_nil
     result[:status].should == Pop3::TIMEOUT_ERROR_FLAG
   end
 
   it "should download mail" do
-    setup_pop3
+    setup_mock_time_pop3
     result = @pop3.download
-    @pop3.mails.size.should == 3
     result.should_not be_nil
 
-    result[:mails].should === @pop3.mails
+    result[:mail_count].should === 3
     result[:status].should === Pop3::OK_FLAG
+  end
+end
+
+describe Pop3, "write mbox" do
+  include Pop3SpecHelper
+
+  before(:each) do
+    remove_file( MBOX_FILE )
+  end
+
+  after(:all) do
+    remove_file( MBOX_FILE )
+  end
+
+  it "should generate mbox name" do
+    setup_mock_time_pop3
+
+    @pop3.generate_mbox_name.should == 'bd4937b271d8f20c3003489a231b3824943a163f'
+  end
+
+  it "should generate mbox file" do
+    setup_mock_time_pop3
+    @pop3.download
+
+    File.should be_exist( MBOX_FILE )
   end
 end
 

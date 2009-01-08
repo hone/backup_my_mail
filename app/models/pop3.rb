@@ -1,4 +1,5 @@
 require 'net/pop'
+require 'digest/sha1'
 
 class Pop3 < ActiveRecord::BaseWithoutTable
   DEFAULT_PORT = 110
@@ -7,6 +8,8 @@ class Pop3 < ActiveRecord::BaseWithoutTable
   OK_FLAG = :ok
   AUTHENTICATION_ERROR_FLAG = :authentication_error
   TIMEOUT_ERROR_FLAG = :timeout_error
+
+  FILE_DIR = File.join( RAILS_ROOT, 'public/download' )
 
   column :email_address, :string
   column :server , :string
@@ -17,7 +20,7 @@ class Pop3 < ActiveRecord::BaseWithoutTable
   column :port , :integer
   column :old_port, :integer
 
-  attr_reader :mailer, :mails
+  attr_reader :mailer
 
   # callbacks don't seem to be working
 #   before_save :setup_mailer
@@ -47,12 +50,13 @@ class Pop3 < ActiveRecord::BaseWithoutTable
 
   def download
     # reset mail info
-    @mails = nil
+    mail_count = nil
 
     status = OK_FLAG
     begin
       @mailer.start( self.username, self.password )
-      @mails = @mailer.mails
+      mail_count = 3
+      write_mbox
       @mailer.finish
     rescue Net::POPAuthenticationError
       status = AUTHENTICATION_ERROR_FLAG
@@ -60,6 +64,21 @@ class Pop3 < ActiveRecord::BaseWithoutTable
       status = TIMEOUT_ERROR_FLAG
     end
 
-    { :mails => @mails, :status => status }
+    { :mail_count => mail_count, :status => status }
+  end
+
+  # generate hash based of e-mail address and current time
+  def generate_mbox_name
+    Digest::SHA1.hexdigest( "#{self.email_address}|#{Time.now.to_s}" )
+  end
+
+  def write_mbox
+    File.open( "#{FILE_DIR}/#{generate_mbox_name}.mbox", 'a' ) do |file|
+      @mailer.each_mail do |mail|
+        mail.pop do |chunk|
+          file.write chunk
+        end
+      end
+    end
   end
 end
