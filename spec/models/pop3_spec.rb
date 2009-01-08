@@ -15,6 +15,12 @@ module Pop3SpecHelper
     @pop3.attributes = @valid_attributes
     @pop3.setup_mailer if setup_mailer
   end
+
+  def setup_mock_pop3( opts = {}, setup_mailer = true )
+    Net::POP3.should_receive(:new).once.and_return(@mailer)
+    @mailer.should_receive(:enable_ssl).once
+    setup_pop3( opts, setup_mailer )
+  end
 end
 
 describe Pop3, "setup mailer" do
@@ -107,12 +113,54 @@ describe Pop3, "setup mailer" do
 end
 
 describe Pop3, "download mail" do
-  it "should not connect"
+  include Pop3SpecHelper
+
+  before(:each) do
+    @mailer = mock( "Net::POP3" )
+  end
+
+  it "should not connect due to authentication problem after downloading mail" do
+    setup_pop3
+
+    result = @pop3.download
+    result[:mails].should_not be_nil
+    result[:status].should == Pop3::OK_FLAG
+
+    @pop3.mailer.should_receive(:start).once.and_raise(Net::POPAuthenticationError)
+    result = @pop3.download
+
+    result[:mails].should be_nil
+    result[:status].should == Pop3::AUTHENTICATION_ERROR_FLAG
+  end
+
+  it "should not connect due to authentication problem" do
+    setup_mock_pop3( :username => 'boo' )
+
+    @mailer.should_receive(:start).once.and_raise(Net::POPAuthenticationError)
+    result = @pop3.download
+
+    result[:mails].should be_nil
+    result[:status].should == Pop3::AUTHENTICATION_ERROR_FLAG
+  end
+
+  it "should not connect due to invalid server" do
+    setup_mock_pop3( :server => 'pop.wornpath.net' )
+
+    @mailer.should_receive(:start).once.and_raise(Timeout::Error)
+    result = @pop3.download
+
+    result[:mails].should be_nil
+    result[:status].should == Pop3::TIMEOUT_ERROR_FLAG
+  end
 
   it "should download mail" do
-    pending "get setup mailer first"
-    @pop3.save
-    @pop3.mailer.mail.size.should == 3
+    setup_pop3
+    result = @pop3.download
+    @pop3.mails.size.should == 3
+    result.should_not be_nil
+
+    result[:mails].should === @pop3.mails
+    result[:status].should === Pop3::OK_FLAG
   end
 end
 
