@@ -1,6 +1,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
-MBOX_FILE = File.join( RAILS_ROOT, 'public', 'download', 'bd4937b271d8f20c3003489a231b3824943a163f.mbox' )
+MBOX_FILE = File.join( RAILS_ROOT, 'public', 'download', 'bd4937b271d8f20c3003489a231b3824943a163f' )
 
 module Pop3SpecHelper
   def setup_pop3( opts = {}, setup_mailer = true )
@@ -39,6 +39,21 @@ module Pop3SpecHelper
     if File.exist?( file )
       FileUtils.rm( file )
     end
+  end
+
+  def should_have_error_on_attribute( attribute, value = nil, error_num = 1 )
+    setup_pop3( { attribute => value }, false )
+
+    @pop3.should_not be_valid
+    @pop3.should have(error_num).error_on(attribute)
+  end
+
+  def setup_long_variable( value, length )
+    return_value = value
+    difference = length - value.size + 1
+    1.upto( difference ) { return_value += 'a' }
+
+    return_value
   end
 end
 
@@ -198,4 +213,66 @@ describe Pop3, "write mbox" do
 end
 
 describe Pop3, "validations" do
+  include Pop3SpecHelper
+
+  it "should create a valid Pop3" do
+    setup_pop3( {}, false )
+
+    @pop3.should be_valid
+  end
+
+  it "should require an email address" do
+    should_have_error_on_attribute( :email_address, nil, 3 )
+  end
+
+  it "should require a server" do
+    should_have_error_on_attribute( :server, nil, 3 )
+  end
+
+  it "should require a username" do
+    should_have_error_on_attribute( :username, nil, 2 )
+  end
+
+  it "should require a password" do
+    should_have_error_on_attribute( :password, nil, 2 )
+  end
+
+  it "should require port to be greater than or equal to port min" do
+    should_have_error_on_attribute( :port, Pop3::PORT_MIN - 1 )
+  end
+
+  it "should require port to be less than or equal to port max" do
+    should_have_error_on_attribute( :port, Pop3::PORT_MAX + 1 )
+  end
+
+  it "should require a somewhat valid email address" do
+    should_have_error_on_attribute( :email_address, 'boo' )
+    should_have_error_on_attribute( :email_address, 'boo@boo.boo.' )
+  end
+
+  it "should require a somewhat valid server" do
+    should_have_error_on_attribute( :server, 'boo' )
+    should_have_error_on_attribute( :server, 'boo.boo' )
+    should_have_error_on_attribute( :server, 'boo.boo.boo.' )
+  end
+
+  it "should require email address to be less than or equal to max chars" do
+    long_email = setup_long_variable( "boo@boo.com", Pop3::MAX_CHAR_LENGTH )
+    should_have_error_on_attribute( :email_address, long_email )
+  end
+
+  it "should require server to be less than or equal to max chars" do
+    long_server = setup_long_variable( "pop.gmail.com", Pop3::MAX_CHAR_LENGTH )
+    should_have_error_on_attribute( :server, long_server )
+  end
+
+  it "should require username to be less than or equal to max chars" do
+    long_username = setup_long_variable( "otherinbox", Pop3::MAX_CHAR_LENGTH )
+    should_have_error_on_attribute( :username, long_username )
+  end
+
+  it "should require password to be less than or equal to max chars" do
+    long_password = setup_long_variable( "password", Pop3::MAX_CHAR_LENGTH )
+    should_have_error_on_attribute( :password, long_password )
+  end
 end
