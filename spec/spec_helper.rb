@@ -45,3 +45,18 @@ Spec::Runner.configure do |config|
   # 
   # For more information take a look at Spec::Example::Configuration and Spec::Runner
 end
+
+MBOX_NAME = 'bd4937b271d8f20c3003489a231b3824943a163f'
+MBOX_FILE = File.join( RAILS_ROOT, 'public', 'download', MBOX_NAME )
+
+def remove_file( file )
+  if File.exist?( file )
+    FileUtils.rm( file )
+  end
+end
+
+def setup_mock_time
+  @time = mock("Time")
+  Time.stub!(:now).and_return(@time)
+  @time.stub!(:to_s).and_return( 'Thu Jan 08 01:22:01 -0500 2009' )
+end

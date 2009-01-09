@@ -1,8 +1,5 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
-MBOX_NAME = 'bd4937b271d8f20c3003489a231b3824943a163f'
-MBOX_FILE = File.join( RAILS_ROOT, 'public', 'download', MBOX_NAME )
-
 module Pop3SpecHelper
   def setup_pop3( opts = {}, setup_mailer = true )
     @valid_attributes = {
@@ -34,12 +31,6 @@ module Pop3SpecHelper
     Time.should_receive(:now).once.and_return(@time)
     @time.should_receive(:to_s).once.and_return( 'Thu Jan 08 01:22:01 -0500 2009' )
     setup_pop3( opts, setup_mailer )
-  end
-
-  def remove_file( file )
-    if File.exist?( file )
-      FileUtils.rm( file )
-    end
   end
 
   def should_have_error_on_attribute( attribute, value = nil, error_num = 1 )
