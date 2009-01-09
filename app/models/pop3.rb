@@ -68,12 +68,14 @@ class Pop3 < ActiveRecord::BaseWithoutTable
   def download
     # reset mail info
     mail_count = nil
+    mbox_name = nil
 
     status = OK_FLAG
     begin
       @mailer.start( self.username, self.password )
-      mail_count = 3
-      write_mbox
+      mail_count = @mailer.mails.size
+      mbox_name = generate_mbox_name
+      write_mbox( mbox_name )
       @mailer.finish
     rescue Net::POPAuthenticationError
       status = AUTHENTICATION_ERROR_FLAG
@@ -81,7 +83,11 @@ class Pop3 < ActiveRecord::BaseWithoutTable
       status = TIMEOUT_ERROR_FLAG
     end
 
-    { :mail_count => mail_count, :status => status }
+    {
+      :mail_count => mail_count,
+      :mbox_name => mbox_name,
+      :status => status
+    }
   end
 
   # generate hash based of e-mail address and current time
@@ -89,9 +95,13 @@ class Pop3 < ActiveRecord::BaseWithoutTable
     Digest::SHA1.hexdigest( "#{self.email_address}|#{Time.now.to_s}" )
   end
 
-  def write_mbox
-    File.open( "#{FILE_DIR}/#{generate_mbox_name}", 'a' ) do |file|
-      @mailer.each_mail do |mail|
+  def write_mbox( name )
+    filename = "#{FILE_DIR}/#{name}"
+    if File.exist?( filename )
+      FileUtils.rm( filename )
+    end
+    File.open( filename, 'a' ) do |file|
+      @mailer.mails.each do |mail|
         mail.pop do |chunk|
           file.write chunk
         end

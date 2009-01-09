@@ -1,6 +1,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
-MBOX_FILE = File.join( RAILS_ROOT, 'public', 'download', 'bd4937b271d8f20c3003489a231b3824943a163f' )
+MBOX_NAME = 'bd4937b271d8f20c3003489a231b3824943a163f'
+MBOX_FILE = File.join( RAILS_ROOT, 'public', 'download', MBOX_NAME )
 
 module Pop3SpecHelper
   def setup_pop3( opts = {}, setup_mailer = true )
@@ -164,6 +165,7 @@ describe Pop3, "download mail" do
     result = @pop3.download
 
     result[:mail_count].should be_nil
+    result[:mbox_name].should be_nil
     result[:status].should == Pop3::AUTHENTICATION_ERROR_FLAG
   end
 
@@ -174,15 +176,18 @@ describe Pop3, "download mail" do
     result = @pop3.download
 
     result[:mail_count].should be_nil
+    result[:mbox_name].should be_nil
     result[:status].should == Pop3::TIMEOUT_ERROR_FLAG
   end
 
   it "should download mail" do
+    pending( "this test should be run explicitly" )
     setup_mock_time_pop3
     result = @pop3.download
     result.should_not be_nil
 
-    result[:mail_count].should === 3
+    result[:mail_count].should == 3
+    result[:mbox_name].should == MBOX_NAME
     result[:status].should === Pop3::OK_FLAG
   end
 end
@@ -205,10 +210,26 @@ describe Pop3, "write mbox" do
   end
 
   it "should generate mbox file" do
-    setup_mock_time_pop3
-    @pop3.download
+    setup_pop3
+    @pop3.mailer.stub!(:mails).and_return([[1],[2],[3]])
+    @pop3.write_mbox( MBOX_NAME )
 
     File.should be_exist( MBOX_FILE )
+  end
+
+  it "should overwrite (truncate) an existing file of the same name" do
+    File.open( MBOX_FILE, 'w' ) do |file|
+      file.puts "delete this line"
+    end
+
+    setup_pop3
+    @pop3.mailer.stub!(:mails).and_return([[1],[2],[3]])
+    @pop3.write_mbox( MBOX_NAME )
+
+    File.should be_exist( MBOX_FILE )
+    File.open( MBOX_FILE ) do |file|
+      /^delete this line/.match( file.readlines.first ).should be_nil
+    end
   end
 end
 
