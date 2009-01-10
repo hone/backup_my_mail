@@ -1,5 +1,3 @@
 <h1>BackupMyMail Downloads</h1>
 <p>To download, right click on the link and left click on "Save as" or your browser's equivalent."</p>
-<% @downloads.each do |name, filename| %>
-<p><%= link_to name, "/download/#{filename}" %></p>
-<% end %>
+<p><%= link_to 'Download', "/download/#{@download}" %></p>

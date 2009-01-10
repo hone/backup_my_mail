@@ -33,9 +33,7 @@ describe BackupsController do
 
   describe "GET 'show'" do
     before(:each) do
-      @params = {
-        :inbox => MBOX_NAME
-      }
+      @params = MBOX_NAME
     end
 
     def do_get
@@ -46,7 +44,7 @@ describe BackupsController do
       FileUtils.touch( MBOX_FILE )
       do_get
 
-      assigns[:downloads].should == { "inbox" => MBOX_NAME }
+      assigns[:download].should == MBOX_NAME
       response.should be_success
       response.should render_template( :show )
 
@@ -65,7 +63,7 @@ describe BackupsController do
       remove_file( MBOX_FILE )
       do_get
 
-      assigns[:downloads].should == { "inbox" => MBOX_NAME }
+      assigns[:download].should == MBOX_NAME
       response.should redirect_to( :action => :new )
       flash[:notice].should match /no valid mbox/i
     end
@@ -101,9 +99,10 @@ describe BackupsController, " handling POST /backups" do
       :status => Pop3::OK_FLAG
     }
     setup_create( result )
+    @pop3.should_receive(:email_address).and_return(@params[:email_address])
 
     do_post
-    response.should redirect_to( :action => :show, :mbox => { :inbox => result[:mbox_name] } )
+    response.should redirect_to( :action => :show, :mbox => result[:mbox_name] )
     flash[:notice].should match /success/i
   end
 

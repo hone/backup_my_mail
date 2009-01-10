@@ -20,7 +20,8 @@ class BackupsController < ApplicationController
         case result[:status]
         when Pop3::OK_FLAG
           flash[:notice] = "Backup successfully created"
-          format.html { redirect_to( :action => :show, :mbox => { :inbox => result[:mbox_name] } ) }
+          Notify.deliver_success( @pop3.email_address, { :inbox => result[:mbox_name] } )
+          format.html { redirect_to( :action => :show, :mbox => result[:mbox_name] ) }
         when Pop3::AUTHENTICATION_ERROR_FLAG
           flash[:notice] = "Could not create backup due to authentication problems"
           format.html { render :action => :new }
@@ -37,10 +38,10 @@ class BackupsController < ApplicationController
   end
 
   def show
-    @downloads = params[:mbox]
+    @download = params[:mbox]
 
     respond_to do |format|
-      if @downloads.nil? or @downloads.empty? or not check_files_exist( @downloads.values )
+      if @download.nil? or @download.empty? or not check_files_exist( @download )
         flash[:notice] = 'No valid mbox specified'
         format.html { redirect_to( :action => :new ) }
       else
