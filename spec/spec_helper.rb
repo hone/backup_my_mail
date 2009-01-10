@@ -60,3 +60,14 @@ def setup_mock_time
   Time.stub!(:now).and_return(@time)
   @time.stub!(:to_s).and_return( 'Thu Jan 08 01:22:01 -0500 2009' )
 end
+
+def valid_pop3_attributes
+  @valid_attributes = {
+    :email_address => 'test.otherinbox@gmail.com',
+    :server => 'pop.gmail.com',
+    :username => 'test.otherinbox@gmail.com',
+    :password => '0th3r1nb0x', # TODO need to encrypt this
+    :ssl => true,
+    :port => 995
+  }
+end

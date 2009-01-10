@@ -1,0 +1,33 @@
+<h1>BackupMyMail</h1>
+
+<% form_for :remote_mail, :url => { :action => :create } do |f| %>
+  <%= f.error_messages %>
+
+  <p>
+    <%= f.label :email_address %>
+    <%= f.text_field :email_address %>
+  </p>
+  <p>
+    <%= f.label :server %>
+    <%= f.text_field :server %>
+  </p>
+  <p>
+    <%= f.label :username %>
+    <%= f.text_field :username %>
+  </p>
+  <p>
+    <%= f.label :password %>
+    <%= f.password_field :password %>
+  </p>
+  <p>
+    <%= f.label :ssl, "SSL" %>
+    <%= f.check_box :ssl %>
+  </p>
+  <p>
+    <%= f.label :port %>
+    <%= f.text_field :port %>
+  </p>
+  <p>
+    <%= f.submit "Backup!" %>
+  </p>
+<% end %>

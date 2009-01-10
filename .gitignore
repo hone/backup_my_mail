@@ -6,3 +6,4 @@ tags
 public/cache/**/*
 doc/*
 coverage/*
+public/download/*

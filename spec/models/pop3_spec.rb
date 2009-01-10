@@ -2,14 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 module Pop3SpecHelper
   def setup_pop3( opts = {}, setup_mailer = true )
-    @valid_attributes = {
-      :email_address => 'test.otherinbox@gmail.com',
-      :server => 'pop.gmail.com',
-      :username => 'test.otherinbox@gmail.com',
-      :password => '0th3r1nb0x', # TODO need to encrypt this
-      :ssl => true,
-      :port => 995
-    }.merge( opts )
+    @valid_attributes = valid_pop3_attributes.merge( opts )
 
     @pop3 = Pop3.new
     @pop3.attributes = @valid_attributes

@@ -3,6 +3,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 module BackupsControllerSpecHelper
   def setup_create( result )
     Pop3.should_receive(:new).once.and_return(@pop3)
+    @pop3.should_receive(:valid?).once.and_return(true)
     @pop3.should_receive(:setup_mailer).once
     @pop3.should_receive(:download).once.and_return( result )
   end
@@ -77,6 +78,7 @@ describe BackupsController, " handling POST /backups" do
   before do
     @pop3 = mock_model( Pop3 )
     Pop3.stub!(:new).and_return(@pop3)
+    @pop3.stub!(:valid).and_return(true)
     @params = {
       :email_address => 'test.otherinbox@gmail.com',
       :server => 'pop.gmail.com',
@@ -103,6 +105,16 @@ describe BackupsController, " handling POST /backups" do
     do_post
     response.should redirect_to( :action => :show, :mbox => { :inbox => result[:mbox_name] } )
     flash[:notice].should match /success/i
+  end
+
+  it "should render new page if invalid RemoteMail" do
+    @params = nil
+    @pop3.should_receive(:valid?).once.and_return(false)
+
+    do_post
+    response.should be_success
+    response.should render_template( :new )
+    flash[:notice].should match /problems/i
   end
 
   it "should show error for authentication problem" do
