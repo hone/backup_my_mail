@@ -4,8 +4,6 @@ module BackupsControllerSpecHelper
   def setup_create( result )
     Pop3.should_receive(:new).once.and_return(@pop3)
     @pop3.should_receive(:valid?).once.and_return(true)
-    @pop3.should_receive(:setup_mailer).once
-    @pop3.should_receive(:download).once.and_return( result )
   end
 end
 
@@ -32,45 +30,20 @@ describe BackupsController do
   end
 
   describe "GET 'show'" do
-    before(:each) do
-      @params = MBOX_NAME
-    end
-
     def do_get
-      get :show, :mbox => @params
+      get :show
     end
 
     it "should be successful" do
-      FileUtils.touch( MBOX_FILE )
       do_get
 
-      assigns[:download].should == MBOX_NAME
       response.should be_success
       response.should render_template( :show )
-
-      remove_file( MBOX_FILE )
-    end
-
-    it "should redirect if no mbox is specified" do
-      @params = nil
-      do_get
-
-      response.should redirect_to( :action => :new )
-      flash[:notice].should match /no valid mbox/i
-    end
-
-    it "should redirect if mbox does not exist" do
-      remove_file( MBOX_FILE )
-      do_get
-
-      assigns[:download].should == MBOX_NAME
-      response.should redirect_to( :action => :new )
-      flash[:notice].should match /no valid mbox/i
     end
   end
 end
 
-describe BackupsController, " handling POST /backups" do
+describe BackupsController, " handling POST /backups/create" do
   include BackupsControllerSpecHelper
 
   before do
@@ -91,7 +64,7 @@ describe BackupsController, " handling POST /backups" do
     post :create, :remote_mail => @params
   end
 
-  it "should redirect to page to download mbox" do
+  it "should redirect to page to show page" do
     result =
     {
       :mail_count => 3,
@@ -99,11 +72,9 @@ describe BackupsController, " handling POST /backups" do
       :status => Pop3::OK_FLAG
     }
     setup_create( result )
-    @pop3.should_receive(:email_address).and_return(@params[:email_address])
 
     do_post
-    response.should redirect_to( :action => :show, :mbox => result[:mbox_name] )
-    flash[:notice].should match /success/i
+    response.should redirect_to( :action => :show )
   end
 
   it "should render new page if invalid RemoteMail" do
@@ -116,7 +87,7 @@ describe BackupsController, " handling POST /backups" do
     flash[:notice].should match /problems/i
   end
 
-  it "should show error for authentication problem" do
+  it "should redirect to show page for authentication problem" do
     result = 
     {
       :status => Pop3::AUTHENTICATION_ERROR_FLAG
@@ -124,21 +95,19 @@ describe BackupsController, " handling POST /backups" do
     setup_create( result )
 
     do_post
-    response.should be_success
-    response.should render_template(:new)
-    flash[:notice].should match /authentication/i
+    response.should redirect_to( :action => 'show' )
   end
 
-  it "should show error for timeout problem" do
-    result = 
+  it "should redirect to show page for timeout problem" do
+    result =
     {
       :status => Pop3::TIMEOUT_ERROR_FLAG
     }
     setup_create( result )
 
     do_post
-    response.should be_success
-    response.should render_template(:new)
-    flash[:notice].should match /timeout/i
+    response.should redirect_to( :action => 'show' )
   end
+
+  # TODO add examples for spec'ng spawn process
 end

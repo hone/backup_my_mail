@@ -2,7 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 module Pop3SpecHelper
   def setup_pop3( opts = {}, setup_mailer = true )
-    @valid_attributes = valid_pop3_attributes.merge( opts )
+    @valid_attributes = valid_attributes.merge( opts )
 
     @pop3 = Pop3.new
     @pop3.attributes = @valid_attributes
@@ -24,21 +24,6 @@ module Pop3SpecHelper
     Time.should_receive(:now).once.and_return(@time)
     @time.should_receive(:to_s).once.and_return( 'Thu Jan 08 01:22:01 -0500 2009' )
     setup_pop3( opts, setup_mailer )
-  end
-
-  def should_have_error_on_attribute( attribute, value = nil, error_num = 1 )
-    setup_pop3( { attribute => value }, false )
-
-    @pop3.should_not be_valid
-    @pop3.should have(error_num).error_on(attribute)
-  end
-
-  def setup_long_variable( value, length )
-    return_value = value
-    difference = length - value.size + 1
-    1.upto( difference ) { return_value += 'a' }
-
-    return_value
   end
 end
 
@@ -128,18 +113,17 @@ describe Pop3, "setup mailer" do
 
     old_mailer.should_not == @pop3.mailer
   end
-
 end
 
 describe Pop3, "download mail" do
   include Pop3SpecHelper
 
   before(:each) do
-    remove_file( MBOX_FILE )
+    remove_file( MBOX_FILE_ZIP )
   end
 
   after(:all) do
-    remove_file( MBOX_FILE )
+    remove_file( MBOX_FILE_ZIP )
   end
 
   it "should not connect due to authentication problem" do
@@ -167,12 +151,14 @@ describe Pop3, "download mail" do
   it "should download mail" do
     pending( "this test should be run explicitly" )
     setup_mock_time_pop3
+    puts "tmpdir: #{Dir::tmpdir}"
     result = @pop3.download
     result.should_not be_nil
 
     result[:mail_count].should == 3
-    result[:mbox_name].should == MBOX_NAME
+    result[:mbox_name].should == MBOX_ZIP
     result[:status].should === Pop3::OK_FLAG
+    File.should be_exist( MBOX_FILE_ZIP )
   end
 end
 
@@ -180,11 +166,11 @@ describe Pop3, "write mbox" do
   include Pop3SpecHelper
 
   before(:each) do
-    remove_file( MBOX_FILE )
+    remove_file( TMP_MBOX_FILE )
   end
 
   after(:all) do
-    remove_file( MBOX_FILE )
+    remove_file( TMP_MBOX_FILE )
   end
 
   it "should generate mbox name" do
@@ -198,11 +184,11 @@ describe Pop3, "write mbox" do
     @pop3.mailer.stub!(:mails).and_return([[1],[2],[3]])
     @pop3.write_mbox( MBOX_NAME )
 
-    File.should be_exist( MBOX_FILE )
+    File.should be_exist( TMP_MBOX_FILE )
   end
 
   it "should overwrite (truncate) an existing file of the same name" do
-    File.open( MBOX_FILE, 'w' ) do |file|
+    File.open( TMP_MBOX_FILE, 'w' ) do |file|
       file.puts "delete this line"
     end
 
@@ -210,74 +196,9 @@ describe Pop3, "write mbox" do
     @pop3.mailer.stub!(:mails).and_return([[1],[2],[3]])
     @pop3.write_mbox( MBOX_NAME )
 
-    File.should be_exist( MBOX_FILE )
-    File.open( MBOX_FILE ) do |file|
+    File.should be_exist( TMP_MBOX_FILE )
+    File.open( TMP_MBOX_FILE ) do |file|
       /^delete this line/.match( file.readlines.first ).should be_nil
     end
-  end
-end
-
-describe Pop3, "validations" do
-  include Pop3SpecHelper
-
-  it "should create a valid Pop3" do
-    setup_pop3( {}, false )
-
-    @pop3.should be_valid
-  end
-
-  it "should require an email address" do
-    should_have_error_on_attribute( :email_address, nil, 3 )
-  end
-
-  it "should require a server" do
-    should_have_error_on_attribute( :server, nil, 3 )
-  end
-
-  it "should require a username" do
-    should_have_error_on_attribute( :username, nil, 2 )
-  end
-
-  it "should require a password" do
-    should_have_error_on_attribute( :password, nil, 2 )
-  end
-
-  it "should require port to be greater than or equal to port min" do
-    should_have_error_on_attribute( :port, Pop3::PORT_MIN - 1 )
-  end
-
-  it "should require port to be less than or equal to port max" do
-    should_have_error_on_attribute( :port, Pop3::PORT_MAX + 1 )
-  end
-
-  it "should require a somewhat valid email address" do
-    should_have_error_on_attribute( :email_address, 'boo' )
-    should_have_error_on_attribute( :email_address, 'boo@boo.boo.' )
-  end
-
-  it "should require a somewhat valid server" do
-    should_have_error_on_attribute( :server, 'boo' )
-    should_have_error_on_attribute( :server, 'boo.boo' )
-    should_have_error_on_attribute( :server, 'boo.boo.boo.' )
-  end
-
-  it "should require email address to be less than or equal to max chars" do
-    long_email = setup_long_variable( "boo@boo.com", Pop3::MAX_CHAR_LENGTH )
-    should_have_error_on_attribute( :email_address, long_email )
-  end
-
-  it "should require server to be less than or equal to max chars" do
-    long_server = setup_long_variable( "pop.gmail.com", Pop3::MAX_CHAR_LENGTH )
-    should_have_error_on_attribute( :server, long_server )
-  end
-
-  it "should require username to be less than or equal to max chars" do
-    long_username = setup_long_variable( "otherinbox", Pop3::MAX_CHAR_LENGTH )
-    should_have_error_on_attribute( :username, long_username )
-  end
-
-  it "should require password to be less than or equal to max chars" do
-    long_password = setup_long_variable( "password", Pop3::MAX_CHAR_LENGTH )
-    should_have_error_on_attribute( :password, long_password )
   end
 end

@@ -6,7 +6,7 @@ describe "/backups/show" do
     render 'backups/show'
   end
   
-  it "should show download link" do
-    response.should have_tag( "a[href=?]", "/download/#{MBOX_NAME}", "Download" )
+  it "should show thank you" do
+    response.should have_text( /thank you/i )
   end
 end

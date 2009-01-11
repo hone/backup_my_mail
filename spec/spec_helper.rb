@@ -47,7 +47,10 @@ Spec::Runner.configure do |config|
 end
 
 MBOX_NAME = 'bd4937b271d8f20c3003489a231b3824943a163f'
+MBOX_ZIP = "#{MBOX_NAME}.zip"
 MBOX_FILE = File.join( RAILS_ROOT, 'public', 'download', MBOX_NAME )
+MBOX_FILE_ZIP = File.join( RAILS_ROOT, 'public', 'download', "#{MBOX_NAME}.zip" )
+TMP_MBOX_FILE = File.join( RAILS_ROOT, 'public', 'tmp', MBOX_NAME )
 
 def remove_file( file )
   if File.exist?( file )
@@ -61,7 +64,7 @@ def setup_mock_time
   @time.stub!(:to_s).and_return( 'Thu Jan 08 01:22:01 -0500 2009' )
 end
 
-def valid_pop3_attributes
+def valid_attributes
   @valid_attributes = {
     :email_address => 'test.otherinbox@gmail.com',
     :server => 'pop.gmail.com',
@@ -70,4 +73,12 @@ def valid_pop3_attributes
     :ssl => true,
     :port => 995
   }
+end
+
+def setup_long_variable( value, length )
+  return_value = value
+  difference = length - value.size + 1
+  1.upto( difference ) { return_value += 'a' }
+
+  return_value
 end
