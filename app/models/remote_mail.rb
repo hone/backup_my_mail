@@ -7,12 +7,10 @@ module RemoteMailHelper
     klass.class_eval do
       column :email_address, :string
       column :server , :string
-      column :old_server, :string
       column :username , :string
       column :password , :string
       column :ssl , :boolean
       column :port , :integer
-      column :old_port, :integer
     end
   end
 end
@@ -41,8 +39,8 @@ class RemoteMail < ActiveRecord::BaseWithoutTable
   validates_presence_of :username
   validates_presence_of :password
   validates_presence_of :mail_type
-  validates_numericality_of :port, :greater_than_or_equal_to => PORT_MIN, :less_than_or_equal_to => PORT_MAX, :allow_nil => true
-  validates_numericality_of :mail_type, :greater_than_or_equal_to => 1, :less_than_or_equal_to => 2
+  validates_numericality_of :port, :greater_than_or_equal_to => PORT_MIN, :less_than_or_equal_to => PORT_MAX, :allow_nil => true, :only_integer => true
+  validates_numericality_of :mail_type, :greater_than_or_equal_to => 1, :less_than_or_equal_to => 2, :only_integer => true
   validates_format_of :email_address, :with => /^[\w.]+@\w+\.(\w+\.)*\w+$/
   validates_format_of :server, :with => /^\w+\.\w+\.(\w+\.)*\w+$/
   validates_length_of :email_address, :maximum => MAX_CHAR_LENGTH
@@ -64,13 +62,13 @@ class RemoteMail < ActiveRecord::BaseWithoutTable
       FileUtils.rm( output_file )
     end
     Zip::ZipFile.open(output_file, Zip::ZipFile::CREATE) do |zipfile|
-      files.each do |file|
-        base_file = File.basename( file )
-        zipfile.add( base_file, file )
+      files.each do |source, destination|
+        base_file = File.basename( source )
+        zipfile.add( destination, source )
       end
     end
 
-    files.each {|file| remove_file_dir( file ) }
+    files.keys.each {|file| remove_file_dir( file ) }
   end
 
   def remove_file_dir( path )

@@ -18,20 +18,14 @@ class Imap < RemoteMail
     end
     status = OK_FLAG
 
-    if self.old_server != self.server or self.old_port != self.port or self.old_ssl != self.ssl
-      begin
-        @mailer = Net::IMAP.new( self.server, self.port, self.ssl )
-        @mailer.login( self.username, self.password )
-      rescue Net::IMAP::NoResponseError
-        status = AUTHENTICATION_ERROR_FLAG
-      rescue Errno::ETIMEDOUT
-        status = TIMEOUT_ERROR_FLAG
-      end
+    begin
+      @mailer = Net::IMAP.new( self.server, self.port, self.ssl )
+      @mailer.login( self.username, self.password )
+    rescue Net::IMAP::NoResponseError
+      status = AUTHENTICATION_ERROR_FLAG
+    rescue Errno::ETIMEDOUT
+      status = TIMEOUT_ERROR_FLAG
     end
-
-    self.old_server = self.server
-    self.old_port = self.port
-    self.old_ssl = self.ssl
 
     status
   end
@@ -45,15 +39,15 @@ class Imap < RemoteMail
     end
     parent_dir = File.join( mbox_folder, folders.first.name )
     parent_mbox = "#{parent_dir}.mbox"
-    folders_to_zip = folders.inject(Array.new) do |sum, folder|
-      folder_path = File.join( mbox_folder, folder.name.split(folder.delim).join("/") )
+    folders_to_zip = folders.inject(Hash.new) do |sum, folder|
+      folder_path = File.join( mbox_folder, convert_to_another_delim( folder ))
       folder_mbox = "#{folder_path}.mbox"
 
-      files_to_add = Array.new
-      files_to_add += [folder_path] if File.exist?( folder_path )
-      files_to_add += [folder_mbox] if File.exist?( folder_mbox )
+      files_to_add = Hash.new
+      files_to_add[folder_path] = folder.name if File.exist?( folder_path )
+      files_to_add[folder_mbox] = "#{convert_to_another_delim( folder )}.mbox" if File.exist?( folder_mbox )
 
-      sum + files_to_add
+      sum.merge( files_to_add )
     end
     zip_output = File.join( FILE_DIR, "#{mbox_name}.zip" )
     zip( folders_to_zip, zip_output )
@@ -67,7 +61,7 @@ class Imap < RemoteMail
   end
 
   def download_folder( folder, mbox_name )
-    folder_path = "#{TMP_DIR}/#{mbox_name}/#{folder.name.split( folder.delim ).join( "/" )}"
+    folder_path = "#{TMP_DIR}/#{mbox_name}/#{convert_to_another_delim( folder )}"
     FileUtils.mkdir( folder_path ) if folder.attr.include?( :Haschildren )
     @mailer.examine( folder.name )
     uids = @mailer.uid_search(['ALL'])
@@ -97,5 +91,9 @@ class Imap < RemoteMail
         folders + [item]
       end
     end
+  end
+
+  def convert_to_another_delim( folder, other_delim = "/" )
+    folder.name.split( folder.delim ).join( other_delim )
   end
 end

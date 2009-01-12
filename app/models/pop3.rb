@@ -5,6 +5,8 @@ class Pop3 < RemoteMail
   DEFAULT_SSL_PORT = 992
 
   RemoteMailHelper::setup_columns( self )
+  column :old_server, :string
+  column :old_port, :integer
 
   attr_reader :mailer
 
