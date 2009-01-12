@@ -28,6 +28,11 @@
     <%= f.text_field :port %>
   </p>
   <p>
+    <%= f.label :mail_type %>
+    <%= f.radio_button :mail_type, RemoteMail::POP3 %> POP3 
+    <%= f.radio_button :mail_type, RemoteMail::IMAP %> IMAP
+  </p>
+  <p>
     <%= f.submit "Backup!" %>
   </p>
 <% end %>

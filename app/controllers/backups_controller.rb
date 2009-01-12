@@ -11,11 +11,20 @@ class BackupsController < ApplicationController
     @remote_mail = RemoteMail.new( params[:remote_mail] )
     # hack needed to display errors
     @remote_mail.save
-    @pop3 = Pop3.new( params[:remote_mail] )
+
     respond_to do |format|
-      if @pop3.valid?
-        spawn do
-          mail_download( @pop3 )
+      if @remote_mail.valid?
+        case @remote_mail.mail_type
+        when RemoteMail::POP3
+          @pop3 = Pop3.new( params[:remote_mail] )
+          spawn do
+            mail_download_pop3( @pop3 )
+          end
+        when RemoteMail::IMAP
+          @imap = Imap.new( params[:remote_mail] )
+          spawn do
+            mail_download_imap( @imap )
+          end
         end
         format.html { redirect_to :action => :show }
       else
@@ -38,16 +47,29 @@ class BackupsController < ApplicationController
     end
   end
 
-  def mail_download( pop3 )
+  def mail_download_pop3( pop3 )
     pop3.setup_mailer
     result = pop3.download
     case result[:status]
     when Pop3::OK_FLAG
-      Notify.deliver_success( @pop3.email_address, result[:mbox_name] )
+      Notify.deliver_success( pop3.email_address, result[:mbox_name] )
     when Pop3::AUTHENTICATION_ERROR_FLAG
-      Notify.deliver_authentication_problem( @pop3.email_address )
+      Notify.deliver_authentication_problem( pop3.email_address )
     when Pop3::TIMEOUT_ERROR_FLAG
-      Notify.deliver_timeout_problem( @pop3.email_address )
+      Notify.deliver_timeout_problem( pop3.email_address )
+    end
+  end
+
+  def mail_download_imap( imap )
+    status = imap.setup_mailer
+    mbox_name = imap.download
+    case status
+    when Pop3::OK_FLAG
+      Notify.deliver_success( imap.email_address, mbox_name )
+    when Pop3::AUTHENTICATION_ERROR_FLAG
+      Notify.deliver_authentication_problem( imap.email_address )
+    when Pop3::TIMEOUT_ERROR_FLAG
+      Notify.deliver_timeout_problem( imap.email_address )
     end
   end
 

@@ -22,6 +22,8 @@ class RemoteMail < ActiveRecord::BaseWithoutTable
   PORT_MIN = 1
   PORT_MAX = 65535
   MAX_CHAR_LENGTH = 50
+  POP3 = 1
+  IMAP = 2
 
   OK_FLAG = :ok
   AUTHENTICATION_ERROR_FLAG = :authentication_error
@@ -31,13 +33,16 @@ class RemoteMail < ActiveRecord::BaseWithoutTable
   TMP_DIR = File.join( RAILS_ROOT, 'public', 'tmp' )
 
   RemoteMailHelper::setup_columns( self )
+  column :mail_type, :integer
 
   # validations
   validates_presence_of :email_address
   validates_presence_of :server
   validates_presence_of :username
   validates_presence_of :password
-  validates_numericality_of :port, :greater_than_or_equal_to => PORT_MIN, :less_than_or_equal_to => PORT_MAX
+  validates_presence_of :mail_type
+  validates_numericality_of :port, :greater_than_or_equal_to => PORT_MIN, :less_than_or_equal_to => PORT_MAX, :allow_nil => true
+  validates_numericality_of :mail_type, :greater_than_or_equal_to => 1, :less_than_or_equal_to => 2
   validates_format_of :email_address, :with => /^[\w.]+@\w+\.(\w+\.)*\w+$/
   validates_format_of :server, :with => /^\w+\.\w+\.(\w+\.)*\w+$/
   validates_length_of :email_address, :maximum => MAX_CHAR_LENGTH
@@ -72,7 +77,7 @@ class RemoteMail < ActiveRecord::BaseWithoutTable
     if File.exist?( path )
       if File.directory?( path )
         Dir[ "#{path}/*" ].each do |file|
-          remove_dir( file )
+          remove_file_dir( file )
         end
 
         FileUtils.rmdir( path )

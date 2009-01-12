@@ -3,7 +3,6 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 module BackupsControllerSpecHelper
   def setup_create( result )
     Pop3.should_receive(:new).once.and_return(@pop3)
-    @pop3.should_receive(:valid?).once.and_return(true)
   end
 end
 
@@ -13,7 +12,6 @@ describe BackupsController do
   it "should use BackupsController" do
     controller.should be_an_instance_of(BackupsController)
   end
-
 
   describe "GET 'new'" do
     before(:each) do
@@ -47,16 +45,21 @@ describe BackupsController, " handling POST /backups/create" do
   include BackupsControllerSpecHelper
 
   before do
+    @remote_mail = mock_model( RemoteMail )
+    RemoteMail.stub!(:new).and_return(@remote_mail)
+    @remote_mail.stub!(:save)
+    @remote_mail.stub!(:valid?).and_return(true)
+    @remote_mail.stub!(:mail_type).and_return(RemoteMail::POP3)
     @pop3 = mock_model( Pop3 )
     Pop3.stub!(:new).and_return(@pop3)
-    @pop3.stub!(:valid).and_return(true)
     @params = {
       :email_address => 'test.otherinbox@gmail.com',
       :server => 'pop.gmail.com',
       :username => 'test.otherinbox@gmail.com',
       :password => '0th3r1nb0x', # TODO need to encrypt this
       :ssl => true,
-      :port => 995
+      :port => 995,
+      :mail_type => RemoteMail::POP3
     }
   end
 
@@ -64,7 +67,17 @@ describe BackupsController, " handling POST /backups/create" do
     post :create, :remote_mail => @params
   end
 
-  it "should redirect to page to show page" do
+  it "should redirect to page to show page for imap" do
+    @imap_mock = mock_model( Imap )
+    Imap.should_receive(:new).and_return(@imap_mock)
+    @remote_mail.stub!(:mail_type).and_return(2)
+    @params[:mail_type] = RemoteMail::IMAP
+
+    do_post
+    response.should redirect_to( :action => :show )
+  end
+
+  it "should redirect to page to show page for pop3" do
     result =
     {
       :mail_count => 3,
@@ -79,7 +92,7 @@ describe BackupsController, " handling POST /backups/create" do
 
   it "should render new page if invalid RemoteMail" do
     @params = nil
-    @pop3.should_receive(:valid?).once.and_return(false)
+    @remote_mail.should_receive(:valid?).once.and_return(false)
 
     do_post
     response.should be_success

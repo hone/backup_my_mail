@@ -3,7 +3,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 module RemoteMailSpecHelper
   def setup_remote_mail( options = {} )
     @remote_mail = RemoteMail.new
-    @remote_mail.attributes = valid_pop3_attributes.merge( options )
+    @remote_mail.attributes = valid_pop3_attributes.merge( :mail_type => 1 ).merge( options )
   end
 
   def should_have_error_on_attribute( attribute, value = nil, error_num = 1 )
@@ -86,6 +86,12 @@ describe RemoteMail, "validations" do
     @remote_mail.should be_valid
   end
 
+  it "should create a valid RemoteMail with an empty port" do
+    setup_remote_mail( :port => nil )
+
+    @remote_mail.should be_valid
+  end
+
   it "should require an email address" do
     should_have_error_on_attribute( :email_address, nil, 3 )
   end
@@ -139,5 +145,14 @@ describe RemoteMail, "validations" do
   it "should require password to be less than or equal to max chars" do
     long_password = setup_long_variable( "password", RemoteMail::MAX_CHAR_LENGTH )
     should_have_error_on_attribute( :password, long_password )
+  end
+
+  it "should require mail type" do
+    should_have_error_on_attribute( :mail_type, nil, 2 )
+  end
+
+  it "should require mail type to be 1 or 2" do
+    should_have_error_on_attribute( :mail_type, 0 )
+    should_have_error_on_attribute( :mail_type, 3 )
   end
 end

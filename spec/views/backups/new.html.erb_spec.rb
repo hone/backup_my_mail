@@ -6,6 +6,7 @@ describe "/backups/new" do
     valid_pop3_attributes.each do |key, value|
       @remote_mail.stub!(key).and_return( value )
     end
+    @remote_mail.stub!(:mail_type).and_return(RemoteMail::POP3)
     assigns[:remote_mail] = @remote_mail
   end
   
@@ -18,6 +19,7 @@ describe "/backups/new" do
       with_tag( "input#remote_mail_password[name=?][type=password]", "remote_mail[password]" )
       with_tag( "input#remote_mail_ssl[name=?]", "remote_mail[ssl]" )
       with_tag( "input#remote_mail_port[name=?]", "remote_mail[port]" )
+      with_tag( "input#remote_mail_mail_type_1[name=?]", "remote_mail[mail_type]" )
       with_tag( "input[type=submit]" )
     end
   end

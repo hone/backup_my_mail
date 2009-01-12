@@ -10,6 +10,7 @@ class Imap < RemoteMail
   attr_reader :mailer
 
   def setup_mailer
+    Imap.new
     if self.ssl
       self.port = DEFAULT_SSL_PORT if self.port.nil?
     else
@@ -44,8 +45,18 @@ class Imap < RemoteMail
     end
     parent_dir = File.join( mbox_folder, folders.first.name )
     parent_mbox = "#{parent_dir}.mbox"
+    folders_to_zip = folders.inject(Array.new) do |sum, folder|
+      folder_path = File.join( mbox_folder, folder.name.split(folder.delim).join("/") )
+      folder_mbox = "#{folder_path}.mbox"
+
+      files_to_add = Array.new
+      files_to_add += [folder_path] if File.exist?( folder_path )
+      files_to_add += [folder_mbox] if File.exist?( folder_mbox )
+
+      sum + files_to_add
+    end
     zip_output = File.join( FILE_DIR, "#{mbox_name}.zip" )
-    zip( [parent_mbox, parent_dir], zip_output )
+    zip( folders_to_zip, zip_output )
     remove_file_dir( mbox_folder )
 
     zip_output
@@ -70,8 +81,8 @@ class Imap < RemoteMail
 
   def write_mbox( mbox_name, uids )
     File.open( mbox_name, 'w' ) do |file|
-      @mailer.uid_fetch( uids, ['ENVELOPE'] ) do |msg|
-        file.puts( source.uid_fetch( msg.attr['UID'], ['RFC822'] ).first.attr['RFC822'] )
+      @mailer.uid_fetch( uids, ['ENVELOPE'] ).each do |msg|
+        file.puts( @mailer.uid_fetch( msg.attr['UID'], ['RFC822'] ).first.attr['RFC822'] )
       end
     end
   end
