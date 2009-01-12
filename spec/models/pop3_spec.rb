@@ -2,7 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 module Pop3SpecHelper
   def setup_pop3( opts = {}, setup_mailer = true )
-    @valid_attributes = valid_attributes.merge( opts )
+    @valid_attributes = valid_pop3_attributes.merge( opts )
 
     @pop3 = Pop3.new
     @pop3.attributes = @valid_attributes
@@ -148,6 +148,7 @@ describe Pop3, "download mail" do
     result[:status].should == Pop3::TIMEOUT_ERROR_FLAG
   end
 
+  # TODO not sure why this test fails, but gives tempfile error
   it "should download mail" do
     pending( "this test should be run explicitly" )
     setup_mock_time_pop3

@@ -64,7 +64,7 @@ def setup_mock_time
   @time.stub!(:to_s).and_return( 'Thu Jan 08 01:22:01 -0500 2009' )
 end
 
-def valid_attributes
+def valid_pop3_attributes
   @valid_attributes = {
     :email_address => 'test.otherinbox@gmail.com',
     :server => 'pop.gmail.com',
@@ -72,6 +72,17 @@ def valid_attributes
     :password => '0th3r1nb0x', # TODO need to encrypt this
     :ssl => true,
     :port => 995
+  }
+end
+
+def valid_imap_attributes
+  @valid_attributes = {
+    :email_address => 'otherinbox@hone.wornpath.net',
+    :server => 'mail.hone.wornpath.net',
+    :username => 'otherinbox@hone.wornpath.net',
+    :password => '0th3r1nb0x', # TODO need to encrypt this
+    :ssl => false,
+    :port => 143
   }
 end
 

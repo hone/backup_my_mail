@@ -3,7 +3,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
 describe "/backups/new" do
   before(:each) do
     @remote_mail = mock_model( RemoteMail )
-    valid_attributes.each do |key, value|
+    valid_pop3_attributes.each do |key, value|
       @remote_mail.stub!(key).and_return( value )
     end
     assigns[:remote_mail] = @remote_mail

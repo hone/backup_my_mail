@@ -3,7 +3,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 module RemoteMailSpecHelper
   def setup_remote_mail( options = {} )
     @remote_mail = RemoteMail.new
-    @remote_mail.attributes = valid_attributes.merge( options )
+    @remote_mail.attributes = valid_pop3_attributes.merge( options )
   end
 
   def should_have_error_on_attribute( attribute, value = nil, error_num = 1 )
