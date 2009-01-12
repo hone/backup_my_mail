@@ -49,7 +49,7 @@ class Pop3 < RemoteMail
       write_mbox( mbox_name )
       mbox_zip = "#{mbox_name}.zip"
       zip_output = "#{FILE_DIR}/#{mbox_name}.zip"
-      zip( "#{TMP_DIR}/#{mbox_name}", zip_output )
+      zip( { "#{TMP_DIR}/#{mbox_name}" => "inbox.mbox" }, zip_output )
       @mailer.finish
     rescue Net::POPAuthenticationError
       status = AUTHENTICATION_ERROR_FLAG
