@@ -65,6 +65,20 @@ class RemoteMail < ActiveRecord::BaseWithoutTable
       end
     end
 
-    files.each {|file| FileUtils.rm( file ) }
+    files.each {|file| remove_file_dir( file ) }
+  end
+
+  def remove_file_dir( path )
+    if File.exist?( path )
+      if File.directory?( path )
+        Dir[ "#{path}/*" ].each do |file|
+          remove_dir( file )
+        end
+
+        FileUtils.rmdir( path )
+      else
+        FileUtils.rm( path )
+      end
+    end
   end
 end

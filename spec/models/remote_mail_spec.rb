@@ -34,27 +34,46 @@ describe RemoteMail, "zip" do
 
   before(:each) do
     setup_remote_mail
-    FileUtils.touch( TMP_MBOX_FILE )
+  end
+
+  after(:all) do
+    remove_file( TMP_MBOX_FILE )
+    remove_file( @zip_output )
   end
 
   it "should zip a single mbox" do
+    FileUtils.touch( TMP_MBOX_FILE )
     @remote_mail.zip( [TMP_MBOX_FILE], @zip_output )
     File.should be_exist( @zip_output )
     File.should_not be_exist( TMP_MBOX_FILE )
   end
+
+  it "should zip mbox and folder" do
+    parent_dir = "#{TMP_MBOX_FILE}/INBOX" 
+    parent_mbox = "#{parent_dir}.mbox"
+    child_mbox = "#{parent_dir}/Drafts.mbox"
+    remove_dir( TMP_MBOX_FILE )
+    remove_dir( parent_dir )
+    remove_file( parent_mbox )
+
+    FileUtils.mkdir( TMP_MBOX_FILE )
+    FileUtils.touch( parent_mbox )
+    FileUtils.mkdir( parent_dir )
+    FileUtils.touch( child_mbox )
+    @remote_mail.zip( [parent_mbox, parent_dir], @zip_output )
+
+    File.should be_exist( @zip_output )
+    File.should_not be_exist( parent_dir )
+  end
   
   it "should overwrite existing zip file" do
+    FileUtils.touch( TMP_MBOX_FILE )
     remove_file( @zip_output )
     File.open( @zip_output, 'w' ) {|file| file.puts "delete this" }
 
     @remote_mail.zip( [TMP_MBOX_FILE], @zip_output )
     File.should be_exist( @zip_output )
     File.open( @zip_output ) {|file| file.readlines.first.should_not match /delete this/ }
-  end
-
-  after(:all) do
-    remove_file( TMP_MBOX_FILE )
-    remove_file( @zip_output )
   end
 end
 
