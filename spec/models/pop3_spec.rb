@@ -164,11 +164,11 @@ describe Pop3, "write mbox" do
   include Pop3SpecHelper
 
   before(:each) do
-    remove_file( TMP_MBOX_FILE )
+    remove_dir( TMP_MBOX_FILE )
   end
 
   after(:all) do
-    remove_file( TMP_MBOX_FILE )
+    remove_dir( TMP_MBOX_FILE )
   end
 
 

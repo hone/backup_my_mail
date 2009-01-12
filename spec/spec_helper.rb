@@ -99,3 +99,17 @@ def setup_mock_time
   Time.should_receive(:now).once.and_return(@time)
   @time.should_receive(:to_s).once.and_return( 'Thu Jan 08 01:22:01 -0500 2009' )
 end
+
+def remove_dir( path )
+  if File.exist?( path )
+    if File.directory?( path )
+      Dir[ "#{path}/*" ].each do |file|
+        remove_dir( file )
+      end
+
+      FileUtils.rmdir( path )
+    else
+      FileUtils.rm( path )
+    end
+  end
+end
