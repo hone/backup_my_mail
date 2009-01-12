@@ -14,6 +14,17 @@ module RemoteMailSpecHelper
   end
 end
 
+describe RemoteMail do
+  include RemoteMailSpecHelper
+
+  it "should generate mbox name" do
+    setup_mock_time
+    setup_remote_mail
+
+    @remote_mail.generate_mbox_name.should == 'bd4937b271d8f20c3003489a231b3824943a163f'
+  end
+end
+
 describe RemoteMail, "zip" do
   include RemoteMailSpecHelper
   
@@ -23,18 +34,23 @@ describe RemoteMail, "zip" do
 
   before(:each) do
     setup_remote_mail
-    remove_file( TMP_MBOX_FILE )
+    FileUtils.touch( TMP_MBOX_FILE )
   end
 
   it "should zip a single mbox" do
-    FileUtils.touch( TMP_MBOX_FILE )
-
-    @remote_mail.zip( TMP_MBOX_FILE, @zip_output )
+    @remote_mail.zip( [TMP_MBOX_FILE], @zip_output )
     File.should be_exist( @zip_output )
     File.should_not be_exist( TMP_MBOX_FILE )
   end
   
-  it "should overwrite existing zip file"
+  it "should overwrite existing zip file" do
+    remove_file( @zip_output )
+    File.open( @zip_output, 'w' ) {|file| file.puts "delete this" }
+
+    @remote_mail.zip( [TMP_MBOX_FILE], @zip_output )
+    File.should be_exist( @zip_output )
+    File.open( @zip_output ) {|file| file.readlines.first.should_not match /delete this/ }
+  end
 
   after(:all) do
     remove_file( TMP_MBOX_FILE )

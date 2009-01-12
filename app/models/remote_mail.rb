@@ -1,5 +1,6 @@
 require 'zip/zip'
 require 'zip/zipfilesystem'
+require 'digest/sha1'
 
 module RemoteMailHelper
   def self.setup_columns( klass )
@@ -47,8 +48,16 @@ class RemoteMail < ActiveRecord::BaseWithoutTable
   def download
     raise NotImplementedError.new
   end
+  
+  # generate hash based of e-mail address and current time
+  def generate_mbox_name
+    Digest::SHA1.hexdigest( "#{self.email_address}|#{Time.now.to_s}" )
+  end
 
   def zip( files, output_file )
+    if File.exist?( output_file )
+      FileUtils.rm( output_file )
+    end
     Zip::ZipFile.open(output_file, Zip::ZipFile::CREATE) do |zipfile|
       files.each do |file|
         base_file = File.basename( file )

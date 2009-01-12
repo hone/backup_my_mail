@@ -93,3 +93,9 @@ def setup_long_variable( value, length )
 
   return_value
 end
+
+def setup_mock_time
+  @time = mock("Time")
+  Time.should_receive(:now).once.and_return(@time)
+  @time.should_receive(:to_s).once.and_return( 'Thu Jan 08 01:22:01 -0500 2009' )
+end

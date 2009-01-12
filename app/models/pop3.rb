@@ -1,5 +1,4 @@
 require 'net/pop'
-require 'digest/sha1'
 
 class Pop3 < RemoteMail
   DEFAULT_PORT = 110
@@ -63,10 +62,6 @@ class Pop3 < RemoteMail
     }
   end
 
-  # generate hash based of e-mail address and current time
-  def generate_mbox_name
-    Digest::SHA1.hexdigest( "#{self.email_address}|#{Time.now.to_s}" )
-  end
 
   def write_mbox( name )
     filename = "#{TMP_DIR}/#{name}"

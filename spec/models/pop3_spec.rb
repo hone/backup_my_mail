@@ -10,20 +10,15 @@ module Pop3SpecHelper
   end
 
   def setup_mock_mailer_and_time_pop3( opts = {}, setup_mailer = true )
-    @mailer = mock( "Net::POP3" )
-    Net::POP3.should_receive(:new).once.and_return(@mailer)
-    @mailer.should_receive(:enable_ssl).once
+    setup_mock_net_pop3
     @time = mock("Time")
-    Time.stub!(:now).and_return(@time)
-    @time.stub!(:to_s).and_return( 'Thu Jan 08 01:22:01 -0500 2009' )
     setup_pop3( opts, setup_mailer )
   end
 
-  def setup_mock_time_pop3( opts = {}, setup_mailer = true )
-    @time = mock("Time")
-    Time.should_receive(:now).once.and_return(@time)
-    @time.should_receive(:to_s).once.and_return( 'Thu Jan 08 01:22:01 -0500 2009' )
-    setup_pop3( opts, setup_mailer )
+  def setup_mock_net_pop3
+    @mailer = mock( "Net::POP3" )
+    Net::POP3.should_receive(:new).once.and_return(@mailer)
+    @mailer.should_receive(:enable_ssl).once
   end
 end
 
@@ -151,7 +146,9 @@ describe Pop3, "download mail" do
   # TODO not sure why this test fails, but gives tempfile error
   it "should download mail" do
     pending( "this test should be run explicitly" )
-    setup_mock_time_pop3
+    setup_mock_time
+    Time.should_receive(:now).once.and_return(@time)
+    setup_pop3
     puts "tmpdir: #{Dir::tmpdir}"
     result = @pop3.download
     result.should_not be_nil
@@ -174,11 +171,6 @@ describe Pop3, "write mbox" do
     remove_file( TMP_MBOX_FILE )
   end
 
-  it "should generate mbox name" do
-    setup_mock_time_pop3
-
-    @pop3.generate_mbox_name.should == 'bd4937b271d8f20c3003489a231b3824943a163f'
-  end
 
   it "should generate mbox file" do
     setup_pop3
