@@ -35,8 +35,20 @@ class Imap < RemoteMail
     status
   end
 
-  def close
-    close
+  def download
+    mbox_name = generate_mbox_name
+    mbox_folder = File.join( TMP_DIR, mbox_name )
+    FileUtils.mkdir( mbox_folder )
+    folders.each do |folder|
+      download_folder( folder, mbox_name )
+    end
+    parent_dir = File.join( mbox_folder, folders.first.name )
+    parent_mbox = "#{parent_dir}.mbox"
+    zip_output = File.join( FILE_DIR, "#{mbox_name}.zip" )
+    zip( [parent_mbox, parent_dir], zip_output )
+    remove_file_dir( mbox_folder )
+
+    zip_output
   end
 
   def folders
