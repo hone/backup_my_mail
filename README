@@ -6,3 +6,9 @@ I use the spawn plugin and the rubygem rubyzip which must be installed separatel
 
 === Running
 Normal deployment procedures for any Rails app.  `rake setup_dirs` to get public/tmp and public/download made.  Make sure they're set with 0644 permissiosn.  rake clean_up should also be cronned to be set for regularly file cleaning on a regular basis.
+
+It's also necessary to make a sqlite3 production db file inside a db/ folder.  You might need to make the db folder first.
+
+In the app/models/notify.rb make sure to change HOST to the proper HOST or the download urls in the e-mails won't work.
+
+Finally, don't forget to change the ActionMailer settings in environment.rb
