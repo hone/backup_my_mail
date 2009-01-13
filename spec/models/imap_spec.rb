@@ -125,7 +125,7 @@ describe Imap, "live connections" do
     @imap.stub!(:generate_mbox_name).and_return( MBOX_NAME )
     remove_file( MBOX_FILE_ZIP )
 
-    @imap.download.should == MBOX_FILE_ZIP
+    @imap.download.should == File.basename( MBOX_FILE_ZIP )
     File.should be_exist( MBOX_FILE_ZIP )
   end
 end
