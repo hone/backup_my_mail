@@ -60,17 +60,29 @@ class BackupsController < ApplicationController
     end
   end
 
-  def mail_download_imap( imap )
-    status = imap.setup_mailer
-    mbox_name = imap.download
-    case status
-    when Pop3::OK_FLAG
-      Notify.deliver_success( imap.email_address, mbox_name )
-    when Pop3::AUTHENTICATION_ERROR_FLAG
+   def mail_download_imap( imap )
+    begin
+      status = imap.setup_mailer
+      mbox_name = imap.download
+      case status
+      when RemoteMail::OK_FLAG
+        Notify.deliver_success( imap.email_address, mbox_name )
+      when RemoteMail::AUTHENTICATION_ERROR_FLAG
+        Notify.deliver_authentication_problem( imap.email_address )
+      when RemoteMail::TIMEOUT_ERROR_FLAG
+        Notify.deliver_timeout_problem( imap.email_address )
+      else
+        Notify.deliver_timeout_problem( imap.email_address )
+      end
+    rescue Net::IMAP::NoResponseError
       Notify.deliver_authentication_problem( imap.email_address )
-    when Pop3::TIMEOUT_ERROR_FLAG
+    rescue Errno::ETIMEDOUT
+      Notify.deliver_timeout_problem( imap.email_address )
+    rescue
       Notify.deliver_timeout_problem( imap.email_address )
     end
-  end
+
+   end
+
 
 end
