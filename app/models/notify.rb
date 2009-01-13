@@ -8,6 +8,7 @@ class Notify < ActionMailer::Base
  
     body[:email] = email       
     body[:backup] = backup
+    body[:host] = HOST
   end
 
   def authentication_problem(email)
