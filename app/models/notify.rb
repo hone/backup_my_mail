@@ -1,5 +1,6 @@
 class Notify < ActionMailer::Base
   FROM_ADDRESS = "test.otherinbox@gmail.com"
+  HOST = "http://backup.nitroleague.com"
 
   def success(email, backup)
     setup_mail( email )
