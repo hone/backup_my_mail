@@ -53,7 +53,7 @@ class Imap < RemoteMail
     zip( folders_to_zip, zip_output )
     remove_file_dir( mbox_folder )
 
-    zip_output
+    File.basename( zip_output )
   end
 
   def folders
